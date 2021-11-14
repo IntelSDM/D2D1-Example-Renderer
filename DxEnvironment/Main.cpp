@@ -215,7 +215,7 @@ void GetTextSize(const std::string text,float* const width,float* const height,i
 /// </summary>
 /// <param name="input"></param>
 /// <returns></returns>
-void Text(const wchar_t* text,int x,int y, D2D1::ColorF colour, int font, bool centred)
+void Text(std::wstring_view text,int x,int y, D2D1::ColorF colour, int font, bool centred)
 {
 
 
@@ -229,12 +229,12 @@ void Text(const wchar_t* text,int x,int y, D2D1::ColorF colour, int font, bool c
         GetTextSize(text, &rect2.right, &rect2.bottom, font);
         D2D1_RECT_F rect = { static_cast<float>(x - (rect2.right / 2)), static_cast<float>(y), FLT_MAX, FLT_MAX };
 
-        RenderTarget->DrawTextW(text, (UINT32)wcslen(text), Fonts[font], &rect, Brush);
+        RenderTarget->DrawTextW(text.data(), static_cast<std::uint32_t>(text.length()), Fonts[font], &rect, Brush);
     }
     else
     {
         D2D1_RECT_F rect = { static_cast<float>(x), static_cast<float>(y), FLT_MAX, FLT_MAX };
-        RenderTarget->DrawTextW(text, (UINT32)wcslen(text), Fonts[font], &rect, Brush);
+        RenderTarget->DrawTextW(text.data(), static_cast<std::uint32_t>(text.length()), Fonts[font], &rect, Brush);
         
     }
 
@@ -246,6 +246,33 @@ void Text(const wchar_t* text,int x,int y, D2D1::ColorF colour, int font, bool c
     */
     
  
+
+}
+void Text(std::string text, int x, int y, D2D1::ColorF colour, int font, bool centred)
+{
+
+   
+        RenderTarget->CreateSolidColorBrush(colour, &Brush);
+
+    if (centred)
+    {
+        
+        D2D1_RECT_F rect2 = { static_cast<float>(0), static_cast<float>(0), FLT_MAX, FLT_MAX };
+        GetTextSize(text, &rect2.right, &rect2.bottom, font);
+        D2D1_RECT_F rect = { static_cast<float>(x - (rect2.right / 2)), static_cast<float>(y), FLT_MAX, FLT_MAX };
+
+        RenderTarget->DrawTextW(string_to_wstring(text).data(), static_cast<std::uint32_t>(string_to_wstring(text).length()), Fonts[font], &rect, Brush);
+    }
+    else
+    {
+        D2D1_RECT_F rect = { static_cast<float>(x), static_cast<float>(y), FLT_MAX, FLT_MAX };
+        RenderTarget->DrawTextW(string_to_wstring(text).data(), static_cast<std::uint32_t>(string_to_wstring(text).length()), Fonts[font], &rect, Brush);
+
+    }
+
+   
+
+
 
 }
 /// <summary>
@@ -465,7 +492,7 @@ void LinearRoundedRectangle(int x, int y, int width, int height, D2D1::ColorF co
     LinearBrush->Release();
 
 }
-void LinearText(const wchar_t* text, int x, int y, int font, bool centred, D2D1::ColorF colour1, D2D1::ColorF colour2, float point1x = 0, float point1y = 0, float point2x = 150, float point2y = 150)
+void LinearText(std::wstring_view text, int x, int y, int font, bool centred, D2D1::ColorF colour1, D2D1::ColorF colour2, float point1x = 0, float point1y = 0, float point2x = 150, float point2y = 150)
 {
     D2D1_GRADIENT_STOP stops[] =
     {
@@ -500,12 +527,12 @@ void LinearText(const wchar_t* text, int x, int y, int font, bool centred, D2D1:
         GetTextSize(text, &rect2.right, &rect2.bottom, font);
         D2D1_RECT_F rect = { static_cast<float>(x - (rect2.right / 2)), static_cast<float>(y), FLT_MAX, FLT_MAX };
 
-        RenderTarget->DrawTextW(text, (UINT32)wcslen(text), Fonts[font], &rect, LinearBrush);
+        RenderTarget->DrawTextW(text.data(), static_cast<std::uint32_t>(text.length()), Fonts[font], &rect, LinearBrush);
     }
     else
     {
         D2D1_RECT_F rect = { static_cast<float>(x), static_cast<float>(y), FLT_MAX, FLT_MAX };
-        RenderTarget->DrawTextW(text, (UINT32)wcslen(text), Fonts[font], &rect, LinearBrush);
+        RenderTarget->DrawTextW(text.data(), static_cast<std::uint32_t>(text.length()), Fonts[font], &rect, LinearBrush);
 
     }
     GradientStops->Release();
@@ -515,7 +542,57 @@ void LinearText(const wchar_t* text, int x, int y, int font, bool centred, D2D1:
 
 
 }
+void LinearText(std::string text, int x, int y, int font, bool centred, D2D1::ColorF colour1, D2D1::ColorF colour2, float point1x = 0, float point1y = 0, float point2x = 150, float point2y = 150)
+{
+    D2D1_GRADIENT_STOP stops[] =
+    {
+        { 0.0f,colour1 },
+        { 1.0f,colour2 },
+        //{ 1.0f, Colour(0,0,255,255) }
+    };
+    RenderTarget->CreateGradientStopCollection(
+        stops,
+        _countof(stops),
+        D2D1_GAMMA_2_2,
+        D2D1_EXTEND_MODE_CLAMP,
+        &GradientStops
+    );
+    D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES props = {};
+    D2D1_SIZE_F size = RenderTarget->GetSize();
 
+    RenderTarget->CreateLinearGradientBrush(
+        D2D1::LinearGradientBrushProperties(
+            D2D1::Point2F(point1x, point1y),
+            D2D1::Point2F(point2x, point2y)),
+        GradientStops,
+        &LinearBrush
+    );
+
+
+    if (centred)
+    {
+        // you can also centre y axis as well  by doing y - (rect2.bottom / 2) in the y cast
+        //flt max means the chars have no limit
+        D2D1_RECT_F rect2 = { static_cast<float>(0), static_cast<float>(0), FLT_MAX, FLT_MAX };
+        GetTextSize(text, &rect2.right, &rect2.bottom, font);
+        D2D1_RECT_F rect = { static_cast<float>(x - (rect2.right / 2)), static_cast<float>(y), FLT_MAX, FLT_MAX };
+
+        RenderTarget->DrawTextW(string_to_wstring(text).data(), static_cast<std::uint32_t>(string_to_wstring(text).length()), Fonts[font], &rect, LinearBrush);
+    }
+    else
+    {
+        D2D1_RECT_F rect = { static_cast<float>(x), static_cast<float>(y), FLT_MAX, FLT_MAX };
+        RenderTarget->DrawTextW(string_to_wstring(text).data(), static_cast<std::uint32_t>(string_to_wstring(text).length()), Fonts[font], &rect, LinearBrush);
+
+    }
+    GradientStops->Release();
+    LinearBrush->Release();
+
+
+
+
+}
+std::string testtextshit = "Test";
 void RenderFrame(void)
 {
    
@@ -539,7 +616,7 @@ void RenderFrame(void)
     Rectangle(500, 800, 200, 200, Colour(0, 255, 0, 255));
 
 
-    Text(L"Nice",0,0,Colour(0,255,0,255),0, false);
+    Text(testtextshit,0,0,Colour(0,255,0,255),0, false);
     Text(L"Nice", 100, 0, Colour(0, 255, 0, 255), 0, false);
     Text(L"Nice", 290, 0, Colour(0, 255, 0, 255), 0, false);
     Text(L"Nice", 540, 0, Colour(0, 255, 0, 255), 0, false);
@@ -547,6 +624,8 @@ void RenderFrame(void)
     Text(L"Nice", 900, 0, Colour(0, 255, 0, 255), 0, false);
     Text(L"Nice", 650, 0, Colour(0, 255, 0, 255), 0, false);
     Text(L"Nice", 1000, 100, Colour(0, 255, 0, 255), 0, false);
+
+    RoundedRectangle(500, 500, 300, 500, Colour(0, 0, 255, 255), 10);
 
     Circle(RenderTarget->GetSize().width / 2, RenderTarget->GetSize().height / 2, Colour(100, 200, 0, 255), 100,true, 2);
     Text(L"Middle", RenderTarget->GetSize().width / 2, RenderTarget->GetSize().height / 2, Colour(0, 255, 0, 255), 0, true);
