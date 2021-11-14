@@ -592,12 +592,16 @@ void LinearText(std::string text, int x, int y, int font, bool centred, D2D1::Co
 
 
 }
+POINT MousePos;
 std::string testtextshit = "Test";
 void RenderFrame(void)
 {
    
+
     RenderTarget->BeginDraw();
- 
+    std::string pos = std::to_string(MousePos.x) + " " + std::to_string(MousePos.y);
+
+   
 
 
 
@@ -616,7 +620,7 @@ void RenderFrame(void)
     Rectangle(500, 800, 200, 200, Colour(0, 255, 0, 255));
 
 
-    Text(testtextshit,0,0,Colour(0,255,0,255),0, false);
+    Text(pos,0,0,Colour(0,255,0,255),0, false);
     Text(L"Nice", 100, 0, Colour(0, 255, 0, 255), 0, false);
     Text(L"Nice", 290, 0, Colour(0, 255, 0, 255), 0, false);
     Text(L"Nice", 540, 0, Colour(0, 255, 0, 255), 0, false);
@@ -631,6 +635,8 @@ void RenderFrame(void)
     Text(L"Middle", RenderTarget->GetSize().width / 2, RenderTarget->GetSize().height / 2, Colour(0, 255, 0, 255), 0, true);
     Circle(RenderTarget->GetSize().width / 2, RenderTarget->GetSize().height / 2, Colour(255, 255, 255, 255), 130, false, 2);
     Circle(RenderTarget->GetSize().width / 2, RenderTarget->GetSize().height / 2, Colour(255, 255, 255, 255), 160, false, 1);
+
+    Text(pos, MousePos.x, MousePos.y, Colour(0, 255, 100, 255), 0, false);
 
     RenderTarget->EndDraw();
 
@@ -693,6 +699,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (msg.message == WM_QUIT)
                 break;
         }
+        GetCursorPos(&MousePos);
         // memory leaks and high gpu and cpu usage seems to occur when its minimised so this is a check for if its not minimised
      if(!IsIconic(hWnd))
         RenderFrame();
