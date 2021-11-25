@@ -594,6 +594,12 @@ void LinearText(std::string text, int x, int y, int font, bool centred, D2D1::Co
 }
 POINT MousePos;
 std::string testtextshit = "Test";
+
+void Toggle(int x,int y)
+{
+
+}
+
 void RenderFrame(void)
 {
    
@@ -699,7 +705,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (msg.message == WM_QUIT)
                 break;
         }
+
+        // gets the cursor position then corrects it on the client area
         GetCursorPos(&MousePos);
+        ScreenToClient(hWnd, &MousePos);
+
+
         // memory leaks and high gpu and cpu usage seems to occur when its minimised so this is a check for if its not minimised
      if(!IsIconic(hWnd))
         RenderFrame();
