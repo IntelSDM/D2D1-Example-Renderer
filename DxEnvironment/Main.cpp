@@ -1,25 +1,28 @@
 // include the basic windows header files and the Direct3D header files
-#include <windows.h>
-#include <windowsx.h>
+
+#pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "Dwrite")
+#pragma comment(lib, "windowscodecs.lib")
+//#include <windows.h>
+//#include <windowsx.h>
 #include <d2d1.h>
 #include <dwrite.h>
 #include <float.h>
 #include <string>
-#include <unordered_map>
-#include <algorithm>
-#include <codecvt>
-#include <locale>
+//#include "Dxgitype.h"
 
-#pragma comment(lib, "d2d1.lib")
-#pragma comment(lib, "Dwrite")
+
+
+#include <wincodec.h>
+
 ID2D1Factory* Factory;             
 ID2D1HwndRenderTarget* RenderTarget;
 IDWriteFactory* FontFactory;
 ID2D1SolidColorBrush* Brush;
 ID2D1LinearGradientBrush* LinearBrush;
 ID2D1GradientStopCollection* GradientStops = NULL;
-
-
+ID2D1Bitmap* bmp1;
+ID2D1Bitmap* bmp2;
 
 
 IDWriteTextFormat* Fonts[6]; // could replace this with a map but thats effort
@@ -85,6 +88,31 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
+static std::wstring string_to_wstring(const std::string input)
+{
+    std::wstring wstr(input.begin(), input.end());
+    return wstr;
+}
+
+void CreateBitmap(LPCWSTR filename, ID2D1Bitmap** bmp)
+{
+    IWICImagingFactory* wicFactory = NULL;
+    HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (LPVOID*)&wicFactory);
+    IWICBitmapDecoder* wicDecoder = NULL;
+    hr = wicFactory->CreateDecoderFromFilename(filename, NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &wicDecoder);
+    IWICBitmapFrameDecode* WicFrame = NULL;
+    hr = wicDecoder->GetFrame(0, &WicFrame);
+    IWICFormatConverter* WicConverter = NULL;
+    hr = wicFactory->CreateFormatConverter(&WicConverter);
+    hr = WicConverter->Initialize(WicFrame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, NULL, 0.0, WICBitmapPaletteTypeCustom);
+    //  ID2D1Bitmap* bmp2;
+    RenderTarget->CreateBitmapFromWicBitmap(WicConverter, NULL, bmp);
+
+    wicFactory->Release();
+    wicDecoder->Release();
+    WicConverter->Release();
+    WicFrame->Release();
+}
 
 
 
@@ -125,7 +153,8 @@ void InitD2D(HWND hWnd)
         RenderTarget->CreateSolidColorBrush(D2D1::ColorF(0,0,0,0), &Brush);
 
         RenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-        
+        CreateBitmap(L"Cat.png",&bmp1);
+        CreateBitmap(L"Cat2.png", &bmp2);
     }
   
 
@@ -162,11 +191,7 @@ void CreateFonts(std::wstring_view fontname, float size, DWRITE_FONT_WEIGHT weig
   
 
 }
-static std::wstring string_to_wstring(const std::string input)
-{
-    std::wstring wstr(input.begin(), input.end());
-    return wstr;
-}
+
 void GetTextSize(const std::wstring_view text,float* const width,float* const height, int font)
 {
     if (!text.empty()) 
@@ -592,11 +617,14 @@ void LinearText(std::string text, int x, int y, int font, bool centred, D2D1::Co
 
 
 }
+
 POINT MousePos;
 std::string testtextshit = "Test";
 
-void Toggle(int x,int y)
+void DrawBitmap(ID2D1Bitmap* bmp,int x,int y)
 {
+
+    RenderTarget->DrawBitmap(bmp, D2D1::RectF(static_cast<float>(x), static_cast<float>(y), bmp->GetSize().width + x, bmp->GetSize().height + y), 1.0f, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, D2D1::RectF(0.0f, 0.0f, bmp->GetSize().width, bmp->GetSize().height));
 
 }
 
@@ -622,7 +650,7 @@ void RenderFrame(void)
     Rectangle(100, 500, 200, 200, Colour(0, 255, 255, 255));
     Rectangle(400, 300, 200, 200, Colour(0, 0, 255, 255));
     Rectangle(1100, 500, 200, 200, Colour(0, 255, 255, 255));
-
+  //  RenderTarget.drawima
     Rectangle(500, 800, 200, 200, Colour(0, 255, 0, 255));
 
 
@@ -642,8 +670,10 @@ void RenderFrame(void)
     Circle(RenderTarget->GetSize().width / 2, RenderTarget->GetSize().height / 2, Colour(255, 255, 255, 255), 130, false, 2);
     Circle(RenderTarget->GetSize().width / 2, RenderTarget->GetSize().height / 2, Colour(255, 255, 255, 255), 160, false, 1);
 
+    if(bmp1 != NULL)
     Text(pos, MousePos.x, MousePos.y, Colour(0, 255, 100, 255), 0, false);
-
+    DrawBitmap(bmp1,100,200);
+    DrawBitmap(bmp2,700,100);
     RenderTarget->EndDraw();
 
 }
