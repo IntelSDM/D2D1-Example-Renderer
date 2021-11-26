@@ -1,15 +1,16 @@
 // include the basic windows header files and the Direct3D header files
 
+// Note For Reader On Rounded Shapes The AA Is The Rounding (Anti Aliasing)
+
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "Dwrite")
 #pragma comment(lib, "windowscodecs.lib")
-//#include <windows.h>
-//#include <windowsx.h>
+
 #include <d2d1.h>
 #include <dwrite.h>
 #include <float.h>
 #include <string>
-//#include "Dxgitype.h"
+
 
 
 
@@ -21,10 +22,9 @@ IDWriteFactory* FontFactory;
 ID2D1SolidColorBrush* Brush;
 ID2D1LinearGradientBrush* LinearBrush;
 ID2D1GradientStopCollection* GradientStops = NULL;
-ID2D1Bitmap* bmp1;
 ID2D1Bitmap* bmp2;
-
-
+POINT MousePos;
+ID2D1Bitmap* Bitmaps[6];
 IDWriteTextFormat* Fonts[6]; // could replace this with a map but thats effort
 int FontNumber;
 
@@ -88,16 +88,14 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
-static std::wstring string_to_wstring(const std::string input)
-{
-    std::wstring wstr(input.begin(), input.end());
-    return wstr;
-}
+
 
 void CreateBitmap(LPCWSTR filename, ID2D1Bitmap** bmp)
 {
     IWICImagingFactory* wicFactory = NULL;
     HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (LPVOID*)&wicFactory);
+
+
     IWICBitmapDecoder* wicDecoder = NULL;
     hr = wicFactory->CreateDecoderFromFilename(filename, NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &wicDecoder);
     IWICBitmapFrameDecode* WicFrame = NULL;
@@ -113,9 +111,6 @@ void CreateBitmap(LPCWSTR filename, ID2D1Bitmap** bmp)
     WicConverter->Release();
     WicFrame->Release();
 }
-
-
-
 void InitD2D(HWND hWnd)
 {
 
@@ -153,23 +148,23 @@ void InitD2D(HWND hWnd)
         RenderTarget->CreateSolidColorBrush(D2D1::ColorF(0,0,0,0), &Brush);
 
         RenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
-        CreateBitmap(L"Cat.png",&bmp1);
+        CreateBitmap(L"Cat.png",&Bitmaps[0]);
         CreateBitmap(L"Cat2.png", &bmp2);
     }
   
 
 }
 
+static std::wstring string_to_wstring(const std::string input)
+{
+    std::wstring wstr(input.begin(), input.end());
+    return wstr;
+}
 D2D1::ColorF Colour(UINT8 R, UINT8 G, UINT8 B, UINT8 A)
 {
     return D2D1::ColorF(static_cast<float>(R) / 255.0f, static_cast<float>(G) / 255.0f, static_cast<float>(B) / 255.0f, static_cast<float>(A) / 255.0f);
 
 }
-
-
-
-
-
 void CreateFonts(std::wstring_view fontname, float size, DWRITE_FONT_WEIGHT weight)
 {
   
@@ -191,7 +186,6 @@ void CreateFonts(std::wstring_view fontname, float size, DWRITE_FONT_WEIGHT weig
   
 
 }
-
 void GetTextSize(const std::wstring_view text,float* const width,float* const height, int font)
 {
     if (!text.empty()) 
@@ -222,7 +216,6 @@ void GetTextSize(const std::wstring_view text,float* const width,float* const he
         }
     }
 }
-
 void GetTextSize(const std::string text,float* const width,float* const height,int font)
 {
     if (!text.empty()) 
@@ -235,11 +228,7 @@ void GetTextSize(const std::string text,float* const width,float* const height,i
 
 
 
-/// <summary>
-/// Draws text
-/// </summary>
-/// <param name="input"></param>
-/// <returns></returns>
+
 void Text(std::wstring_view text,int x,int y, D2D1::ColorF colour, int font, bool centred)
 {
 
@@ -300,15 +289,6 @@ void Text(std::string text, int x, int y, D2D1::ColorF colour, int font, bool ce
 
 
 }
-/// <summary>
-/// Draws filled and normal circles
-/// </summary>
-/// <param name="x"></param>
-/// <param name="y"></param>
-/// <param name="colour"></param>
-/// <param name="radius"></param>
-/// <param name="filled"></param>
-/// <param name="width"></param>
 void Circle(int x,int y, D2D1::ColorF colour,float radius,bool filled,float width = 1)
 {
     if (!filled)
@@ -328,14 +308,6 @@ void Circle(int x,int y, D2D1::ColorF colour,float radius,bool filled,float widt
     }
 
 }
-/// <summary>
-/// Line Rectangle
-/// </summary>
-/// <param name="x"></param>
-/// <param name="y"></param>
-/// <param name="colour"></param>
-/// <param name="x"></param>
-/// <param name="linewidth"></param>
 void Rectangle(int x, int y, int width, int height, int linewidth ,D2D1::ColorF colour)
 {
  
@@ -344,39 +316,15 @@ void Rectangle(int x, int y, int width, int height, int linewidth ,D2D1::ColorF 
     RenderTarget->DrawRectangle(rect, Brush,linewidth);
    
 }
-/// <summary>
-/// Filled Rectangle
-/// </summary>
-/// <param name="x"></param>
-/// <param name="y"></param>
-/// <param name="width"></param>
-/// <param name="height"></param>
-/// <param name="linewidth"></param>
-/// <param name="colour"></param>
 void Rectangle(int x, int y, int width, int height, D2D1::ColorF colour)
 {
    
-    //  RenderTarget.recta
     RenderTarget->CreateSolidColorBrush(colour, &Brush);
     D2D1_RECT_F rect = { static_cast<float>(x), static_cast<float>(y), static_cast<float>(width + x), static_cast<float>(height + y) };
     RenderTarget->FillRectangle(rect, Brush);
-  
-    //RenderTarget->DrawRectangle(rect, Brush);
 }
-/// <summary>
-/// 
-/// </summary>
-/// <param name="x"></param>
-/// <param name="y"></param>
-/// <param name="width"></param>
-/// <param name="height"></param>
-/// <param name="linewidth"></param>
-/// <param name="colour"></param>
-/// <param name="aa">Anti Aliasing On The Corners (Rounding)</param>
 void RoundedRectangle(int x, int y, int width, int height, int linewidth, D2D1::ColorF colour,int aa = 10)
 {
-   
-    
     RenderTarget->CreateSolidColorBrush(colour, &Brush);
     D2D1_RECT_F rect = { static_cast<float>(x), static_cast<float>(y), static_cast<float>(width + x), static_cast<float>(height + y) };
     D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
@@ -388,19 +336,8 @@ void RoundedRectangle(int x, int y, int width, int height, int linewidth, D2D1::
 
    
 }
-/// <summary>
-/// 
-/// </summary>
-/// <param name="x"></param>
-/// <param name="y"></param>
-/// <param name="width"></param>
-/// <param name="height"></param>
-/// <param name="colour"></param>
-/// <param name="aa">Anti Aliasing On The Corners (Rounding)</param>
 void RoundedRectangle(int x, int y, int width, int height, D2D1::ColorF colour,int aa = 10)
 {
- 
-    //   ID2D1StrokeStyle
     RenderTarget->CreateSolidColorBrush(colour, &Brush);
     D2D1_RECT_F rect = { static_cast<float>(x), static_cast<float>(y), static_cast<float>(width + x), static_cast<float>(height + y) };
     D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
@@ -412,7 +349,6 @@ void RoundedRectangle(int x, int y, int width, int height, D2D1::ColorF colour,i
 
 
 }
-
 void Line(int xstart, int ystart, int xend, int yend, D2D1::ColorF colour, int width = 1)
 {
     D2D1_POINT_2F start = { static_cast<float>(xstart), static_cast<float>(ystart) };
@@ -423,8 +359,6 @@ void Line(int xstart, int ystart, int xend, int yend, D2D1::ColorF colour, int w
 
 
 }
- 
-
 void LinearRectangle(int x,int y,int width,int height, D2D1::ColorF colour1, D2D1::ColorF colour2, float point1x = 0,float point1y = 0 ,float point2x = 150,float point2y = 150)
 {
     //https://i.imgur.com/fGvBnxh.png
@@ -462,20 +396,6 @@ void LinearRectangle(int x,int y,int width,int height, D2D1::ColorF colour1, D2D
     LinearBrush->Release();
 
 }
-/// <summary>
-/// 
-/// </summary>
-/// <param name="x"></param>
-/// <param name="y"></param>
-/// <param name="width"></param>
-/// <param name="height"></param>
-/// <param name="colour1"></param>
-/// <param name="colour2"></param>
-/// <param name="point1x"></param>
-/// <param name="point1y"></param>
-/// <param name="point2x"></param>
-/// <param name="point2y"></param>
-/// <param name="aa">Anti Aliasing On The Corners (Rounding)</param>
 void LinearRoundedRectangle(int x, int y, int width, int height, D2D1::ColorF colour1, D2D1::ColorF colour2, float point1x = 0, float point1y = 0, float point2x = 150, float point2y = 150,int aa = 10)
 {
     //https://i.imgur.com/fGvBnxh.png
@@ -617,16 +537,18 @@ void LinearText(std::string text, int x, int y, int font, bool centred, D2D1::Co
 
 
 }
-
-POINT MousePos;
-std::string testtextshit = "Test";
-
-void DrawBitmap(ID2D1Bitmap* bmp,int x,int y)
+void DrawBitmap(ID2D1Bitmap* bmp, int x, int y)
 {
 
     RenderTarget->DrawBitmap(bmp, D2D1::RectF(static_cast<float>(x), static_cast<float>(y), bmp->GetSize().width + x, bmp->GetSize().height + y), 1.0f, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, D2D1::RectF(0.0f, 0.0f, bmp->GetSize().width, bmp->GetSize().height));
 
 }
+
+
+
+
+
+
 
 void RenderFrame(void)
 {
@@ -650,12 +572,11 @@ void RenderFrame(void)
     Rectangle(100, 500, 200, 200, Colour(0, 255, 255, 255));
     Rectangle(400, 300, 200, 200, Colour(0, 0, 255, 255));
     Rectangle(1100, 500, 200, 200, Colour(0, 255, 255, 255));
-  //  RenderTarget.drawima
     Rectangle(500, 800, 200, 200, Colour(0, 255, 0, 255));
 
 
     Text(pos,0,0,Colour(0,255,0,255),0, false);
-    Text(L"Nice", 100, 0, Colour(0, 255, 0, 255), 0, false);
+    Text("Nice", 100, 0, Colour(0, 255, 0, 255), 0, false);
     Text(L"Nice", 290, 0, Colour(0, 255, 0, 255), 0, false);
     Text(L"Nice", 540, 0, Colour(0, 255, 0, 255), 0, false);
     Text(L"Nice", 350, 0, Colour(0, 255, 0, 255), 0, false);
@@ -670,9 +591,8 @@ void RenderFrame(void)
     Circle(RenderTarget->GetSize().width / 2, RenderTarget->GetSize().height / 2, Colour(255, 255, 255, 255), 130, false, 2);
     Circle(RenderTarget->GetSize().width / 2, RenderTarget->GetSize().height / 2, Colour(255, 255, 255, 255), 160, false, 1);
 
-    if(bmp1 != NULL)
     Text(pos, MousePos.x, MousePos.y, Colour(0, 255, 100, 255), 0, false);
-    DrawBitmap(bmp1,100,200);
+    DrawBitmap(Bitmaps[0], 100, 200);
     DrawBitmap(bmp2,700,100);
     RenderTarget->EndDraw();
 
