@@ -383,8 +383,8 @@ void LinearRectangle(int x,int y,int width,int height, D2D1::ColorF colour1, D2D
     auto size = RenderTarget->GetSize();
     RenderTarget->CreateLinearGradientBrush(
         D2D1::LinearGradientBrushProperties(
-            D2D1::Point2F(point1x, point1y),
-            D2D1::Point2F(point2x, point2y)),
+            D2D1::Point2F(x + point1x, y + point1y),
+            D2D1::Point2F(x + point2x, y + point2y)),
         GradientStops,
         &LinearBrush
     );
@@ -420,8 +420,8 @@ void LinearRoundedRectangle(int x, int y, int width, int height, D2D1::ColorF co
     auto size = RenderTarget->GetSize();
     RenderTarget->CreateLinearGradientBrush(
         D2D1::LinearGradientBrushProperties(
-            D2D1::Point2F(point1x, point1y),
-            D2D1::Point2F(point2x, point2y)),
+            D2D1::Point2F(x + point1x, y + point1y),
+            D2D1::Point2F(x + point2x, y + point2y)),
         GradientStops,
         &LinearBrush
     );
@@ -457,8 +457,8 @@ void LinearText(std::wstring_view text, int x, int y, int font, bool centred, D2
 
     RenderTarget->CreateLinearGradientBrush(
         D2D1::LinearGradientBrushProperties(
-            D2D1::Point2F(point1x, point1y),
-            D2D1::Point2F(point2x, point2y)),
+            D2D1::Point2F(x + point1x, y + point1y),
+            D2D1::Point2F(x + point2x, y + point2y)),
         GradientStops,
         &LinearBrush
     );
@@ -507,8 +507,8 @@ void LinearText(std::string text, int x, int y, int font, bool centred, D2D1::Co
 
     RenderTarget->CreateLinearGradientBrush(
         D2D1::LinearGradientBrushProperties(
-            D2D1::Point2F(point1x, point1y),
-            D2D1::Point2F(point2x, point2y)),
+            D2D1::Point2F(x + point1x, y + point1y),
+            D2D1::Point2F(x + point2x, y + point2y)),
         GradientStops,
         &LinearBrush
     );
